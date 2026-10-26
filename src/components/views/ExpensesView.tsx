@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Button from '@/components/ui/Button';
 import { useExpenseStore } from '@/stores/expenseStore';
 import { useUIStore } from '@/stores/uiStore';
@@ -45,6 +45,22 @@ function groupByDate(expenses: Expense[]): Map<string, Expense[]> {
   return map;
 }
 
+function monthLabel(ym: string): string {
+  return new Date(ym + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function categoryTotalsFor(list: Expense[]) {
+  const map = new Map<string, { label: string; emoji: string; amount: number }>();
+  for (const e of list) {
+    const meta  = EXPENSE_CATEGORY_META[e.category];
+    const label = e.category === 'other' ? (e.customCategory?.trim() || 'Other') : meta.label;
+    const existing = map.get(label);
+    if (existing) existing.amount += e.amount;
+    else map.set(label, { label, emoji: meta.emoji, amount: e.amount });
+  }
+  return [...map.values()].sort((a, b) => b.amount - a.amount);
+}
+
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function ExpensesView() {
@@ -54,16 +70,26 @@ export default function ExpensesView() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const monthPrefix = todayStr().slice(0, 7); // YYYY-MM
+  const currentMonth = todayStr().slice(0, 7); // YYYY-MM
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth); // YYYY-MM or 'all'
 
-  const thisMonthExpenses = useMemo(
-    () => expenses.filter((e) => e.date.startsWith(monthPrefix)),
-    [expenses, monthPrefix]
+  // Months that have data (plus the current one), newest first
+  const months = useMemo(() => {
+    const set = new Set<string>([currentMonth]);
+    for (const e of expenses) set.add(e.date.slice(0, 7));
+    return [...set].sort().reverse();
+  }, [expenses, currentMonth]);
+
+  const isAll = selectedMonth === 'all';
+
+  const scopedExpenses = useMemo(
+    () => (isAll ? expenses : expenses.filter((e) => e.date.startsWith(selectedMonth))),
+    [expenses, selectedMonth, isAll]
   );
 
-  const totalThisMonth = useMemo(
-    () => thisMonthExpenses.reduce((sum, e) => sum + e.amount, 0),
-    [thisMonthExpenses]
+  const totalScoped = useMemo(
+    () => scopedExpenses.reduce((sum, e) => sum + e.amount, 0),
+    [scopedExpenses]
   );
 
   const totalToday = useMemo(
@@ -71,21 +97,38 @@ export default function ExpensesView() {
     [expenses]
   );
 
-  const categoryTotals = useMemo(() => {
-    const map = new Map<string, { label: string; emoji: string; amount: number }>();
-    for (const e of thisMonthExpenses) {
-      const meta  = EXPENSE_CATEGORY_META[e.category];
-      const label = e.category === 'other' ? (e.customCategory?.trim() || 'Other') : meta.label;
-      const existing = map.get(label);
-      if (existing) existing.amount += e.amount;
-      else map.set(label, { label, emoji: meta.emoji, amount: e.amount });
+  const categoryTotals = useMemo(() => categoryTotalsFor(scopedExpenses), [scopedExpenses]);
+
+  // Month-by-month: total + category split for every month with data
+  const monthlyBreakdown = useMemo(() => {
+    const byMonth = new Map<string, Expense[]>();
+    for (const e of expenses) {
+      const m = e.date.slice(0, 7);
+      if (!byMonth.has(m)) byMonth.set(m, []);
+      byMonth.get(m)!.push(e);
     }
-    return [...map.values()].sort((a, b) => b.amount - a.amount);
-  }, [thisMonthExpenses]);
+    return [...byMonth.entries()]
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([month, list]) => ({
+        month,
+        total: list.reduce((s, e) => s + e.amount, 0),
+        categories: categoryTotalsFor(list),
+      }));
+  }, [expenses]);
 
   const topCategory = categoryTotals[0];
-  // Average spend per day elapsed so far this month (today counts as day N of the month)
-  const avgPerDay = totalThisMonth / new Date().getDate();
+  // Average per day: days elapsed for the current month, full length for past months, active days for all-time
+  const avgPerDay = useMemo(() => {
+    if (isAll) {
+      const days = new Set(scopedExpenses.map((e) => e.date)).size;
+      return days ? totalScoped / days : 0;
+    }
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const days = selectedMonth === currentMonth ? new Date().getDate() : new Date(y, m, 0).getDate();
+    return totalScoped / days;
+  }, [isAll, scopedExpenses, totalScoped, selectedMonth, currentMonth]);
+
+  const scopeLabel = isAll ? 'all time' : monthLabel(selectedMonth);
 
   const grouped = useMemo(() => groupByDate(expenses), [expenses]);
   const sortedDates = useMemo(() => [...grouped.keys()].sort().reverse(), [grouped]);
@@ -107,30 +150,74 @@ export default function ExpensesView() {
   return (
     <div style={{ maxWidth: 720 }}>
 
+      {/* Period selector */}
+      <div style={{ marginBottom: 16 }}>
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          aria-label="Select month"
+          style={{
+            padding: '8px 12px', borderRadius: 8, fontSize: 14,
+            background: 'var(--bg-elevated)', color: 'var(--text-primary)',
+            border: '1px solid var(--border-default)',
+          }}
+        >
+          <option value="all">All time</option>
+          {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+        </select>
+      </div>
+
       {/* Overview */}
       <Section title="Overview">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          <StatCard value={formatCurrency(totalThisMonth, currency)} label="Spent this month" />
+          <StatCard value={formatCurrency(totalScoped, currency)} label={`Spent (${scopeLabel})`} />
           <StatCard value={formatCurrency(totalToday, currency)} label="Spent today" color="var(--accent)" />
-          <StatCard value={thisMonthExpenses.length} label="Transactions this month" />
+          <StatCard value={scopedExpenses.length} label={`Transactions (${scopeLabel})`} />
         </div>
       </Section>
 
-      {/* By Category (this month) */}
+      {/* By Category (selected period) */}
       {categoryTotals.length > 0 && (
-        <Section title="By Category">
+        <Section title={`By Category · ${scopeLabel}`}>
           <div style={{ ...card, padding: '18px 20px' }}>
             {categoryTotals.map((c) => (
               <BarRow
                 key={c.label}
                 label={`${c.emoji} ${c.label}`}
                 count={c.amount}
-                total={totalThisMonth}
+                total={totalScoped}
                 color="var(--accent)"
                 valueLabel={formatCurrency(c.amount, currency)}
               />
             ))}
           </div>
+        </Section>
+      )}
+
+      {/* Month by month, category-wise */}
+      {monthlyBreakdown.length > 0 && (
+        <Section title="Month by Month">
+          {monthlyBreakdown.map((m) => (
+            <div key={m.month} style={{ ...card, padding: '18px 20px', marginBottom: 12 }}>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', marginBottom: 12,
+                fontSize: 14, fontWeight: 600, color: 'var(--text-primary)',
+              }}>
+                <span>{monthLabel(m.month)}</span>
+                <span>{formatCurrency(m.total, currency)}</span>
+              </div>
+              {m.categories.map((c) => (
+                <BarRow
+                  key={c.label}
+                  label={`${c.emoji} ${c.label}`}
+                  count={c.amount}
+                  total={m.total}
+                  color="var(--accent)"
+                  valueLabel={formatCurrency(c.amount, currency)}
+                />
+              ))}
+            </div>
+          ))}
         </Section>
       )}
 
@@ -145,7 +232,7 @@ export default function ExpensesView() {
           <InsightCard
             emoji="📈"
             value={formatCurrency(avgPerDay, currency)}
-            label="Avg. per day this month"
+            label={isAll ? 'Avg. per active day' : 'Avg. per day'}
           />
         </div>
       </Section>
