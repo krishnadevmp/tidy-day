@@ -93,10 +93,10 @@ export default function Sidebar() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 13, fontWeight: 700, flexShrink: 0,
         }}>
-          Q
+          T
         </div>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
-          Quick Todo
+          Tidy Day
         </span>
       </div>
 

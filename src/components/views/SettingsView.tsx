@@ -213,7 +213,7 @@ export default function SettingsView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `quick-todo-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `tidy-day-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Tasks exported');
@@ -253,7 +253,7 @@ export default function SettingsView() {
             </SettingRow>
           ) : (
             <SettingRow
-              label="Using Quick Todo as a guest"
+              label="Using Tidy Day as a guest"
               description="Data is stored on this device only. Create a free account to sync across devices."
               last
             >

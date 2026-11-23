@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Quick Todo',
-        short_name: 'Quick Todo',
+        name: 'Tidy Day',
+        short_name: 'Tidy Day',
         description: 'Fast-capture todo app with recurring tasks and reminders',
         theme_color: '#6366f1',
         background_color: '#0f172a',

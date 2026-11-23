@@ -26,10 +26,10 @@ export default function AuthLayout({ title, subtitle, children, footer }: AuthLa
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 15, fontWeight: 700, flexShrink: 0,
           }}>
-            Q
+            T
           </div>
           <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
-            Quick Todo
+            Tidy Day
           </span>
         </div>
 

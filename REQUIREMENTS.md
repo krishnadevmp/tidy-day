@@ -1,4 +1,4 @@
-# Quick Todo App — Product Requirements Document
+# Tidy Day App — Product Requirements Document
 
 **Version:** 1.0  
 **Date:** 2026-04-28  

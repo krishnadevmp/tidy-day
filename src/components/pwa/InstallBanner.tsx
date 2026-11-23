@@ -47,7 +47,7 @@ export default function InstallBanner() {
           <Download size={14} color="#fff" />
         </IconBox>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={titleStyle}>Install Quick Todo</div>
+          <div style={titleStyle}>Install Tidy Day</div>
           <div style={subtitleStyle}>Add to home screen for instant access</div>
         </div>
         <Button variant="primary" size="sm" onClick={install}>

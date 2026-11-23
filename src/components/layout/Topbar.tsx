@@ -135,7 +135,7 @@ export default function Topbar() {
         {/* Guest mode — persistent reminder that data is local-only */}
         {authMode === 'guest' && (
           <div
-            title="You're using Quick Todo as a guest — data stays on this device"
+            title="You're using Tidy Day as a guest — data stays on this device"
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               padding: '4px 9px',

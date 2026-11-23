@@ -1,4 +1,4 @@
-# Quick Todo — Development Plan
+# Tidy Day — Development Plan
 
 > Generated: 2026-05-03
 > Stack: React 18 + TypeScript + Vite + Tailwind CSS + Zustand + Dexie.js + vite-plugin-pwa
