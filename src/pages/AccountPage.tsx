@@ -221,8 +221,8 @@ export default function AccountPage() {
       </div>
 
       <style>{`
-        @keyframes quick-todo-spin { to { transform: rotate(360deg); } }
-        .spin { animation: quick-todo-spin 0.8s linear infinite; }
+        @keyframes tidy-day-spin { to { transform: rotate(360deg); } }
+        .spin { animation: tidy-day-spin 0.8s linear infinite; }
       `}</style>
     </div>
   );

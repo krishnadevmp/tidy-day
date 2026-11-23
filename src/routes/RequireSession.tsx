@@ -15,11 +15,11 @@ function Splash() {
         background: 'var(--accent)', color: '#fff',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 15, fontWeight: 700,
-        animation: 'quick-todo-pulse 1.1s ease-in-out infinite',
+        animation: 'tidy-day-pulse 1.1s ease-in-out infinite',
       }}>
         Q
       </div>
-      <style>{`@keyframes quick-todo-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+      <style>{`@keyframes tidy-day-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
     </div>
   );
 }

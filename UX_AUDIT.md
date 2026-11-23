@@ -1,4 +1,4 @@
-# Quick Todo — UX & Accessibility Audit
+# Tidy Day — UX & Accessibility Audit
 
 Method: Playwright against the live deploy (Azure SWA), desktop 1280x800 and mobile 375x667, guest mode. Automated checks (contrast, target size, labels, landmarks, focus order) plus manual flow review. Screenshots were captured during the run.
 Not covered: logged-in sync flows, the Expenses and Dashboard screens with data, screen-reader testing, light theme.
