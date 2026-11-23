@@ -32,7 +32,7 @@ type VariantEntry = {
 
 const VARIANTS: Record<ButtonVariant, VariantEntry> = {
   primary: {
-    rest:    { background: "var(--accent)", color: "#fff", border: "none", fontWeight: 600 },
+    rest:    { background: "var(--accent)", color: "var(--text-on-accent)", border: "none", fontWeight: 600 },
     hover:   { background: "var(--accent-hover, rgba(79,82,220,1))", boxShadow: "0 4px 14px rgba(99,102,241,0.38)" },
     pressed: { background: "rgba(67,70,200,1)", boxShadow: "none" },
   },
@@ -99,6 +99,7 @@ export default function Button({
   return (
     <button
       disabled={disabled}
+      aria-label={rest["aria-label"] ?? (iconOnly && typeof rest.title === "string" ? rest.title : undefined)}
       onMouseEnter={(e) => { setHovered(true);  onMouseEnter?.(e); }}
       onMouseLeave={(e) => { setHovered(false); setPressed(false); onMouseLeave?.(e); }}
       onMouseDown={(e)  => { setPressed(true);  onMouseDown?.(e); }}

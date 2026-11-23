@@ -89,7 +89,7 @@ export default function Sidebar() {
       }}>
         <div style={{
           width: 28, height: 28, borderRadius: 8,
-          background: 'var(--accent)', color: '#fff',
+          background: 'var(--accent)', color: 'var(--text-on-accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 13, fontWeight: 700, flexShrink: 0,
         }}>

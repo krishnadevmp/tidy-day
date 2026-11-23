@@ -25,6 +25,7 @@ export default function AvatarMenu() {
         <button
           onClick={toggle}
           title={isAccount ? user!.name : 'Guest · this device only'}
+          aria-label={isAccount ? `Account: ${user!.name}` : 'Account (guest)'}
           style={{
             width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
             border: isAccount ? 'none' : '1px solid var(--border-default)',

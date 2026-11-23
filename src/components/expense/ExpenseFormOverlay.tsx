@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Tag, Calendar, DollarSign, FileText } from 'lucide-react';
+import { useDialog } from '@/hooks/useDialog';
 import Button from '@/components/ui/Button';
 import { useUIStore } from '@/stores/uiStore';
 import { useExpenseStore } from '@/stores/expenseStore';
@@ -51,6 +52,9 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
   const [isSubmitting, setIsSubmitting]     = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [formError, setFormError] = useState('');
+  useDialog(panelRef);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -67,7 +71,11 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
     (category !== 'other' || customCategory.trim().length > 0);
 
   const handleSubmit = useCallback(async () => {
-    if (!isValid) return;
+    if (!isValid) {
+      setFormError(!title.trim() ? 'Enter a title.' : !(amountValue > 0) ? 'Enter an amount greater than 0.' : 'Enter a custom category name.');
+      if (!title.trim()) inputRef.current?.focus();
+      return;
+    }
     setIsSubmitting(true);
     try {
       const payload = {
@@ -112,7 +120,7 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
       }}
       onClick={(e) => e.target === e.currentTarget && close()}
     >
-      <div style={{
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Expense" style={{
         width: '100%', maxWidth: 480,
         borderRadius: 16, overflow: 'hidden',
         boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
@@ -139,9 +147,10 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
 
           {/* Title */}
           <input
+            aria-label="Expense title" aria-invalid={!!formError} aria-describedby={formError ? 'form-error' : undefined}
             ref={inputRef}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setFormError(''); setTitle(e.target.value); }}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
             placeholder="Expense title — e.g. Weekly grocery run"
             style={{
@@ -154,6 +163,11 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
               marginBottom: 14,
             }}
           />
+          {formError && (
+            <p id="form-error" role="alert" style={{ margin: '-6px 0 12px', fontSize: 12, color: 'var(--error, #dc2626)' }}>
+              {formError}
+            </p>
+          )}
 
           {/* Description */}
           <textarea
@@ -174,7 +188,7 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 14px' }}>
 
             {/* Amount */}
-            <div>
+            <label>
               <div style={fieldLabel}><DollarSign size={11} /> Amount ({currency})</div>
               <input
                 type="number"
@@ -182,32 +196,32 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
                 min="0"
                 step="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => { setFormError(''); setAmount(e.target.value); }}
                 placeholder="0.00"
                 style={{ ...fieldControl, cursor: 'text' }}
               />
-            </div>
+            </label>
 
             {/* Date */}
-            <div>
+            <label>
               <div style={fieldLabel}><Calendar size={11} /> Date</div>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
                 style={{ ...fieldControl, colorScheme: 'dark' }} />
-            </div>
+            </label>
 
             {/* Category */}
-            <div style={{ gridColumn: category === 'other' ? 'span 1' : 'span 2' }}>
+            <label style={{ gridColumn: category === 'other' ? 'span 1' : 'span 2' }}>
               <div style={fieldLabel}><Tag size={11} /> Category</div>
               <select value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory)} style={fieldControl}>
                 {EXPENSE_CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
                 ))}
               </select>
-            </div>
+            </label>
 
             {/* Custom category name — only when "Other" is selected */}
             {category === 'other' && (
-              <div>
+              <label>
                 <div style={fieldLabel}><FileText size={11} /> Custom name</div>
                 <input
                   value={customCategory}
@@ -215,7 +229,7 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
                   placeholder="e.g. Subscriptions"
                   style={{ ...fieldControl, cursor: 'text' }}
                 />
-              </div>
+              </label>
             )}
           </div>
         </div>
@@ -239,7 +253,7 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
             <Button variant="outline" onClick={close}>Cancel</Button>
             <Button variant="primary"
               onClick={handleSubmit}
-              disabled={!isValid || isSubmitting}>
+              disabled={isSubmitting}>
               {isSubmitting ? 'Saving…' : isEditMode ? 'Save Changes' : 'Add Expense'}
             </Button>
           </div>

@@ -13,15 +13,15 @@
   --bg-overlay: rgba(15, 23, 42, 0.5);
 
   --text-primary: #0f172a;
-  --text-sub: #64748b;
-  --text-placeholder: #94a3b8;
+  --text-sub: #475569;
+  --text-placeholder: #58657a;
   --text-on-accent: #ffffff;
 
   --border-default: #e2e8f0;
   --border-focus: #6366f1;
 
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
   --accent-soft: #eef2ff;
 
   /* Priority colours — the ONLY semantic colours in the app */
@@ -48,7 +48,8 @@
 
   --text-primary: #f8fafc;
   --text-sub: #94a3b8;
-  --text-placeholder: #64748b;
+  --text-placeholder: #94a3b8;
+  --text-on-accent: #0f172a;
 
   --border-default: #334155;
   --border-focus: #818cf8;

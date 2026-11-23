@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Tag, Flag, Calendar, Clock, RefreshCw, Bell } from 'lucide-react';
+import { useDialog } from '@/hooks/useDialog';
 import Button from '@/components/ui/Button';
 import { useUIStore } from '@/stores/uiStore';
 import { useTaskStore } from '@/stores/taskStore';
@@ -84,6 +85,9 @@ export default function QuickAddOverlay() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [formError, setFormError] = useState('');
+  useDialog(panelRef);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -107,7 +111,7 @@ export default function QuickAddOverlay() {
   const handleSubmit = useCallback(async () => {
     const parsed = parseInput(title);
     const cleanTitle = parsed.title || title.trim();
-    if (!cleanTitle) return;
+    if (!cleanTitle) { setFormError('Enter a task title to continue.'); inputRef.current?.focus(); return; }
     setIsSubmitting(true);
 
     const effectiveRecurring = (recurring || parsed.recurring || 'none') as RecurringPattern;
@@ -153,7 +157,7 @@ export default function QuickAddOverlay() {
       onClick={(e) => e.target === e.currentTarget && closeQuickAdd()}
     >
       {/* Panel */}
-      <div style={{
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label="New task" style={{
         width: '100%',
         maxWidth: 520,
         borderRadius: 16,
@@ -182,9 +186,10 @@ export default function QuickAddOverlay() {
 
           {/* Title input */}
           <input
+            aria-label="Task title" aria-invalid={!!formError} aria-describedby={formError ? 'form-error' : undefined}
             ref={inputRef}
             value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
+            onChange={(e) => { setFormError(''); handleTitleChange(e.target.value); }}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
             placeholder="Task title — try: Buy milk !high due:tomorrow #groceries"
             style={{
@@ -197,6 +202,11 @@ export default function QuickAddOverlay() {
               marginBottom: 14,
             }}
           />
+          {formError && (
+            <p id="form-error" role="alert" style={{ margin: '-6px 0 12px', fontSize: 12, color: 'var(--error, #dc2626)' }}>
+              {formError}
+            </p>
+          )}
 
           {/* Shortcut hint */}
           <div style={{
@@ -216,32 +226,32 @@ export default function QuickAddOverlay() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 14px' }}>
 
             {/* Priority */}
-            <div>
+            <label>
               <div style={fieldLabel}><Flag size={11} /> Priority</div>
               <select value={priority} onChange={(e) => setPriority(e.target.value as Priority | '')} style={fieldControl}>
                 {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
-            </div>
+            </label>
 
             {/* Category */}
-            <div>
+            <label>
               <div style={fieldLabel}><Tag size={11} /> Category</div>
               <select value={category} onChange={(e) => setCategory(e.target.value as Category | '')} style={fieldControl}>
                 {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
-            </div>
+            </label>
 
             {isRecurring ? (
               /* ── Recurring mode: Repeat + Remind at time ── */
               <>
-                <div>
+                <label>
                   <div style={fieldLabel}><RefreshCw size={11} /> Repeat</div>
                   <select value={recurring} onChange={(e) => setRecurring(e.target.value as RecurringPattern)} style={fieldControl}>
                     {RECURRING.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   </select>
-                </div>
+                </label>
 
-                <div>
+                <label>
                   <div style={fieldLabel}><Clock size={11} /> Remind at</div>
                   <input
                     type="time"
@@ -249,18 +259,18 @@ export default function QuickAddOverlay() {
                     onChange={(e) => setDueTime(e.target.value)}
                     style={{ ...fieldControl, colorScheme: 'dark' }}
                   />
-                </div>
+                </label>
               </>
             ) : (
               /* ── One-off mode: Due date + time + reminder offset + repeat ── */
               <>
-                <div>
+                <label>
                   <div style={fieldLabel}><Calendar size={11} /> Due date</div>
                   <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
                     style={{ ...fieldControl, colorScheme: 'dark' }} />
-                </div>
+                </label>
 
-                <div>
+                <label>
                   <div style={fieldLabel}><Clock size={11} /> Due time</div>
                   <input
                     type="time"
@@ -274,21 +284,21 @@ export default function QuickAddOverlay() {
                       cursor: dueDate ? 'pointer' : 'not-allowed',
                     }}
                   />
-                </div>
+                </label>
 
-                <div>
+                <label>
                   <div style={fieldLabel}><Bell size={11} /> Remind me</div>
                   <select value={reminderOffset} onChange={(e) => setReminderOffset(e.target.value as ReminderOffset)} style={fieldControl}>
                     {REMINDERS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   </select>
-                </div>
+                </label>
 
-                <div>
+                <label>
                   <div style={fieldLabel}><RefreshCw size={11} /> Repeat</div>
                   <select value={recurring} onChange={(e) => setRecurring(e.target.value as RecurringPattern)} style={fieldControl}>
                     {RECURRING.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   </select>
-                </div>
+                </label>
               </>
             )}
 
@@ -338,7 +348,7 @@ export default function QuickAddOverlay() {
             <Button variant="outline" onClick={closeQuickAdd}>Cancel</Button>
             <Button variant="primary"
               onClick={handleSubmit}
-              disabled={!title.trim() || isSubmitting}>
+              disabled={isSubmitting}>
               {isSubmitting ? 'Adding…' : 'Add Task'}
             </Button>
           </div>

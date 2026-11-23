@@ -22,7 +22,7 @@ export default function AuthLayout({ title, subtitle, children, footer }: AuthLa
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 9,
-            background: 'var(--accent)', color: '#fff',
+            background: 'var(--accent)', color: 'var(--text-on-accent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 15, fontWeight: 700, flexShrink: 0,
           }}>

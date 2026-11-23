@@ -86,7 +86,7 @@ export default function BottomNav() {
                 transform: 'translateX(4px)',
                 fontSize: 9, fontWeight: 700,
                 padding: '1px 4px', borderRadius: 10,
-                background: 'var(--accent)', color: '#fff',
+                background: 'var(--accent)', color: 'var(--text-on-accent)',
                 minWidth: 14, textAlign: 'center',
               }}>
                 {badgeCount > 99 ? '99+' : badgeCount}

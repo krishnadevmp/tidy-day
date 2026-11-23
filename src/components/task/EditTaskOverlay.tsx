@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Tag, Flag, Calendar, Clock, RefreshCw, Bell, StopCircle } from 'lucide-react';
+import { useDialog } from '@/hooks/useDialog';
 import Button from '@/components/ui/Button';
 import { useUIStore } from '@/stores/uiStore';
 import { useTaskStore } from '@/stores/taskStore';
@@ -77,6 +78,9 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
   const isRecurring = task.recurring !== 'none' || Boolean(task.recurringParentId);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [formError, setFormError] = useState('');
+  useDialog(panelRef);
 
   useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
 
@@ -87,7 +91,7 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
   }, [closeEditTask]);
 
   const handleSave = useCallback(async () => {
-    if (!title.trim()) return;
+    if (!title.trim()) { setFormError('Task title can’t be empty.'); inputRef.current?.focus(); return; }
     setIsSaving(true);
     try {
       const seriesFields = {
@@ -158,7 +162,7 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
       }}
       onClick={(e) => e.target === e.currentTarget && closeEditTask()}
     >
-      <div style={{
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Edit task" style={{
         width: '100%', maxWidth: 520,
         borderRadius: 16, overflow: 'hidden',
         boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
@@ -196,9 +200,10 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
 
           {/* Title */}
           <input
+            aria-label="Task title" aria-invalid={!!formError} aria-describedby={formError ? 'form-error' : undefined}
             ref={inputRef}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setFormError(''); setTitle(e.target.value); }}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSave()}
             placeholder="Task title"
             style={{
@@ -211,6 +216,11 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
               marginBottom: 18,
             }}
           />
+          {formError && (
+            <p id="form-error" role="alert" style={{ margin: '-6px 0 12px', fontSize: 12, color: 'var(--error, #dc2626)' }}>
+              {formError}
+            </p>
+          )}
 
           {/* Series scope — only shown for recurring tasks */}
           {isRecurring && (
@@ -244,33 +254,33 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 14px' }}>
 
             {/* Priority */}
-            <div>
+            <label>
               <div style={fieldLabel}><Flag size={11} /> Priority</div>
               <select value={priority} onChange={(e) => setPriority(e.target.value as Priority | '')} style={fieldControl}>
                 {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
-            </div>
+            </label>
 
             {/* Category */}
-            <div>
+            <label>
               <div style={fieldLabel}><Tag size={11} /> Category</div>
               <select value={category} onChange={(e) => setCategory(e.target.value as Category | '')} style={fieldControl}>
                 {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
-            </div>
+            </label>
 
             {/* Due date */}
-            <div>
+            <label>
               <div style={fieldLabel}>
                 <Calendar size={11} />
                 {isRecurring ? 'This occurrence' : 'Due date'}
               </div>
               <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
                 style={{ ...fieldControl, colorScheme: 'dark' }} />
-            </div>
+            </label>
 
             {/* Due time */}
-            <div>
+            <label>
               <div style={fieldLabel}>
                 <Clock size={11} />
                 {isRecurring ? 'Remind at' : 'Due time'}
@@ -287,23 +297,23 @@ export default function EditTaskOverlay({ task }: EditTaskOverlayProps) {
                   cursor: (isRecurring || dueDate) ? 'pointer' : 'not-allowed',
                 }}
               />
-            </div>
+            </label>
 
             {/* Remind me */}
-            <div>
+            <label>
               <div style={fieldLabel}><Bell size={11} /> Remind me</div>
               <select value={reminderOffset} onChange={(e) => setReminder(e.target.value as ReminderOffset)} style={fieldControl}>
                 {REMINDERS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
-            </div>
+            </label>
 
             {/* Repeat */}
-            <div>
+            <label>
               <div style={fieldLabel}><RefreshCw size={11} /> Repeat</div>
               <select value={recurring} onChange={(e) => setRecurring(e.target.value as RecurringPattern)} style={fieldControl}>
                 {RECURRING.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
-            </div>
+            </label>
           </div>
 
           {/* Recurring info callout */}
