@@ -8,6 +8,9 @@ const expenses = parseExpenseNotes(RAW_EXPENSE_NOTES);
 
 test.describe('Add expenses from notepad import', () => {
   test.beforeEach(async ({ page }) => {
+    // App redirects fresh visitors to /signup; seed guest mode so the app shell loads
+    await page.addInitScript(() => localStorage.setItem('quick-todo-auth',
+      JSON.stringify({ state: { user: null, token: null, mode: 'guest', hasOnboarded: true }, version: 0 })));
     await page.goto('/');
     await page.getByRole('button', { name: /Expenses/ }).click();
   });

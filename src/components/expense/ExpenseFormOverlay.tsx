@@ -64,6 +64,25 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
     return () => window.removeEventListener('keydown', handler);
   }, [close]);
 
+  // "@" autocomplete: active when the word before the caret is "@partial"
+  const [caret, setCaret] = useState(0);
+  const [hi, setHi] = useState(0);
+  const [acDismissed, setAcDismissed] = useState(false);
+  const atMatch = /(?:^|\s)@(\w*)$/.exec(title.slice(0, caret));
+  const suggestions = atMatch && !acDismissed
+    ? EXPENSE_CATEGORIES.filter((c) => c.value.startsWith(atMatch[1].toLowerCase()))
+    : [];
+  const acOpen = suggestions.length > 0;
+
+  // Picking removes the "@token" from the title and sets the category field
+  const pickCategory = (value: ExpenseCategory) => {
+    const before = title.slice(0, caret).replace(/@\w*$/, '');
+    setTitle(before + title.slice(caret));
+    setCategory(value);
+    setCaret(before.length);
+    requestAnimationFrame(() => inputRef.current?.setSelectionRange(before.length, before.length));
+  };
+
   const amountValue = parseFloat(amount);
   const isValid =
     title.trim().length > 0 &&
@@ -78,12 +97,21 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
     }
     setIsSubmitting(true);
     try {
+      // A fully typed "@grocery" that wasn't picked from the list still counts
+      const typed = /(?:^|\s)@(\w+)(?=\s|$)/.exec(title);
+      const typedCat = EXPENSE_CATEGORIES.find((c) => c.value === typed?.[1].toLowerCase())?.value;
+      const finalTitle = typedCat ? title.replace(typed![0], ' ').replace(/\s+/g, ' ').trim() : title.trim();
+      const finalCategory = typedCat ?? category;
+      if (!finalTitle || (finalCategory === 'other' && !customCategory.trim())) {
+        setFormError(!finalTitle ? 'Enter a title.' : 'Enter a custom category name.');
+        return;
+      }
       const payload = {
-        title: title.trim(),
+        title: finalTitle,
         description: description.trim() || undefined,
         amount: amountValue,
-        category,
-        customCategory: category === 'other' ? customCategory.trim() : undefined,
+        category: finalCategory,
+        customCategory: finalCategory === 'other' ? customCategory.trim() : undefined,
         date,
       };
 
@@ -146,13 +174,28 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
         <div style={{ padding: '20px 20px 16px' }}>
 
           {/* Title */}
+          <div style={{ position: 'relative' }}>
           <input
             aria-label="Expense title" aria-invalid={!!formError} aria-describedby={formError ? 'form-error' : undefined}
+            role="combobox" aria-expanded={acOpen} aria-controls="category-suggestions" aria-autocomplete="list"
             ref={inputRef}
             value={title}
-            onChange={(e) => { setFormError(''); setTitle(e.target.value); }}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit()}
-            placeholder="Expense title — e.g. Weekly grocery run"
+            onChange={(e) => {
+              setFormError(''); setAcDismissed(false); setHi(0);
+              setCaret(e.target.selectionStart ?? e.target.value.length);
+              setTitle(e.target.value);
+            }}
+            onSelect={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}
+            onKeyDown={(e) => {
+              if (acOpen) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); setHi((hi + 1) % suggestions.length); return; }
+                if (e.key === 'ArrowUp')   { e.preventDefault(); setHi((hi - 1 + suggestions.length) % suggestions.length); return; }
+                if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickCategory(suggestions[hi % suggestions.length].value); return; }
+                if (e.key === 'Escape')    { e.stopPropagation(); setAcDismissed(true); return; }
+              }
+              if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
+            }}
+            placeholder="Expense title — e.g. Weekly run @grocery"
             style={{
               width: '100%', boxSizing: 'border-box',
               background: 'transparent', border: 'none', outline: 'none',
@@ -163,6 +206,28 @@ export default function ExpenseFormOverlay({ expense }: ExpenseFormOverlayProps)
               marginBottom: 14,
             }}
           />
+          {acOpen && (
+            <ul id="category-suggestions" role="listbox" style={{
+              position: 'absolute', top: '100%', left: 0, zIndex: 10, margin: '-8px 0 0', padding: 4,
+              listStyle: 'none', minWidth: 200,
+              background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+              borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+            }}>
+              {suggestions.map((c, i) => (
+                <li
+                  key={c.value} role="option" aria-selected={i === hi % suggestions.length}
+                  onMouseDown={(e) => { e.preventDefault(); pickCategory(c.value); }}
+                  onMouseEnter={() => setHi(i)}
+                  style={{
+                    padding: '6px 10px', fontSize: 13, borderRadius: 6, cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    background: i === hi % suggestions.length ? 'var(--bg-chip)' : 'transparent',
+                  }}
+                >{c.emoji} {c.label}</li>
+              ))}
+            </ul>
+          )}
+          </div>
           {formError && (
             <p id="form-error" role="alert" style={{ margin: '-6px 0 12px', fontSize: 12, color: 'var(--error, #dc2626)' }}>
               {formError}
