@@ -4,7 +4,7 @@ A fast, offline-first PWA for tasks and expenses, built with React 19 and TypeSc
 
 **Live:** [wonderful-tree-0fdeaa900.7.azurestaticapps.net](https://wonderful-tree-0fdeaa900.7.azurestaticapps.net)
 
-> Formerly *Quick Todo*. The repo is now `tidy-day`; the backend service (`quick-todo-service`) and internal storage names (`QuickTodoDB`, `quick-todo-*` keys) keep the old name on purpose so existing local data isn't orphaned.
+> Formerly *Quick Todo*. The repo is now `tidy-day`; the backend service (`quick-todo-service`) and internal storage names (`QuickTodoDB`, `quick-todo-*` keys) keep the old name on purpose so existing local data isn't orphaned
 
 ---
 
